@@ -18,7 +18,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -29,6 +30,11 @@ button {
   background: #ffffff;
   color: #172033;
   cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .app {
@@ -165,12 +171,14 @@ label span {
   font-size: 13px;
 }
 
-input {
+input,
+select {
   width: 100%;
   min-height: 42px;
   border-radius: 7px;
   border: 1px solid var(--border);
   padding: 0 12px;
+  background: #ffffff;
 }
 
 .records {
@@ -211,7 +219,10 @@ input {
 @media (max-width: 860px) {
   .metrics,
   .workspace,
-  .field-grid {
+  .field-grid,
+  .episode-cols,
+  .roster-cols,
+  .temp-grid {
     grid-template-columns: 1fr;
   }
 
@@ -219,4 +230,311 @@ input {
     min-height: 210px;
     padding: 24px;
   }
+}
+
+/* ---------- 蹄温预警闭环 ---------- */
+
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.badge-ok {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.badge-warn {
+  color: #92400e;
+  background: #fef3c7;
+}
+
+.badge-ban {
+  color: #b91c1c;
+  background: #fee2e2;
+}
+
+.badge-muted {
+  color: #64748b;
+  background: #e2e8f0;
+}
+
+.hint {
+  margin: 10px 0 0;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.hint-warn {
+  color: #b45309;
+}
+
+.hint-ok {
+  color: #166534;
+}
+
+.banner {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  line-height: 1.7;
+  display: grid;
+  gap: 4px;
+}
+
+.banner small {
+  color: #64748b;
+}
+
+.banner-ok {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.banner-warn {
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+
+.banner-error {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.chips .chip-active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+}
+
+.ghost {
+  padding: 0 14px;
+  color: #64748b;
+}
+
+.date-picker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.date-picker span {
+  color: #64748b;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.date-picker input {
+  width: auto;
+}
+
+/* 马匹列表 */
+.horse-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.horse-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  background: #fbfdff;
+}
+
+.horse-card p {
+  margin: 6px 0 0;
+  color: #526071;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.horse-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* 表格 */
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+th {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  background: #f8fafc;
+}
+
+.cell-hot {
+  color: #b91c1c;
+  font-weight: 800;
+}
+
+.row-superseded td {
+  color: #94a3b8;
+  text-decoration: line-through;
+}
+
+.row-superseded td:last-child,
+.row-superseded td:nth-child(6) {
+  text-decoration: none;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+}
+
+/* 观察闭环 */
+.episode {
+  border: 1px solid #fecaca;
+  border-left: 5px solid #dc2626;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  background: #fffbfb;
+}
+
+.episode-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 14px;
+}
+
+.episode h4 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+
+.episode-footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.episode-footer .hint {
+  margin: 0;
+}
+
+.log {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.log li {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: #ffffff;
+  line-height: 1.6;
+}
+
+.log li span {
+  display: inline-block;
+  margin-right: 8px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.log li.log-abnormal {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.release-log {
+  margin-top: 12px;
+}
+
+.inline-form {
+  display: grid;
+  grid-template-columns: 140px 1fr auto;
+  gap: 8px;
+}
+
+.inline-form button {
+  padding: 0 14px;
+}
+
+.recheck-form button {
+  margin-top: 8px;
+  padding: 0 14px;
+}
+
+.temp-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.subheading {
+  margin: 18px 0 10px;
+  font-size: 15px;
+}
+
+/* 训练名单 */
+.roster-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.roster {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.roster li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fbfdff;
+}
+
+.roster li small {
+  width: 100%;
+  color: #b45309;
+}
+
+.roster li.roster-ban {
+  border-color: #fecaca;
+  background: #fff7f7;
 }
