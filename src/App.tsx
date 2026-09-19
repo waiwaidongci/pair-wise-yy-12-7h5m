@@ -1,126 +1,134 @@
+import { useMemo, useState } from "react";
 import "./styles.css";
+import {
+  HOOFS,
+  isActiveDailyRecord,
+  isUnderObservation,
+  trainingRoster,
+} from "./domain/rules";
+import { repo } from "./storage/repository";
+import { useRootState } from "./storage/store";
+import { TemperatureEntry } from "./components/TemperatureEntry";
+import { HorseList } from "./components/HorseList";
+import { TrainingRoster } from "./components/TrainingRoster";
+import { ObservationPanel } from "./components/ObservationPanel";
+import { HistoryArchive } from "./components/HistoryArchive";
+import { todayStr } from "./lib/time";
 
-const project = {
-  "sourceNo": 6,
-  "id": "hxyfront-62011",
-  "port": 62011,
-  "title": "马术蹄铁修整档案",
-  "domain": "马术蹄铁",
-  "prompt": "做一个面向马术俱乐部蹄铁师的修蹄记录前端项目，可以记录马匹编号、步态问题、蹄形评估、蹄铁类型、钉位、修蹄日期、下次复查日期和照片备注。页面需要有马匹列表、复查提醒、左右前后蹄对比记录、异常步态标记和蹄铁更换历史。",
-  "palette": [
-    "#78350f",
-    "#166534",
-    "#2563eb"
-  ],
-  "metrics": [
-    "待复查",
-    "异常步态",
-    "更换蹄铁",
-    "马匹档案"
-  ],
-  "filters": [
-    "前蹄",
-    "后蹄",
-    "运动马",
-    "休养马"
-  ],
-  "fields": [
-    "马匹编号",
-    "步态问题",
-    "蹄形评估",
-    "蹄铁类型",
-    "钉位",
-    "下次复查"
-  ],
-  "records": [
-    [
-      "HORSE-18",
-      "右前蹄外侧磨耗",
-      "铝蹄铁",
-      "14天后复查"
-    ],
-    [
-      "HORSE-27",
-      "后蹄裂纹",
-      "加护蹄垫",
-      "拍照归档"
-    ],
-    [
-      "HORSE-31",
-      "步态轻微不稳",
-      "需教练复核",
-      "已标记"
-    ]
-  ]
-};
+interface Toast {
+  id: number;
+  msg: string;
+  kind: "ok" | "warn" | "err";
+}
 
 function App() {
+  const state = useRootState();
+  const [date, setDate] = useState(todayStr());
+  const [toasts, setToasts] = useState<Toast[]>([]);
+
+  const roster = useMemo(
+    () =>
+      trainingRoster(
+        state.horses,
+        date,
+        state.tempRecords,
+        state.episodes,
+        state.events
+      ),
+    [state, date]
+  );
+
+  const observingCount = state.episodes.filter((ep) =>
+    isUnderObservation(ep, state.events)
+  ).length;
+  const activeTempCount = state.tempRecords.filter(isActiveDailyRecord).length;
+  const archivedCount = state.tempRecords.filter((r) => r.supersededAt).length;
+  const revokedReleases = state.events.filter(
+    (e) => e.kind === "release" && !e.active
+  ).length;
+
+  function pushToast(msg: string, kind: Toast["kind"]) {
+    const id = Date.now() + Math.random();
+    setToasts((t) => [...t, { id, msg, kind }]);
+    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 6000);
+  }
+
   return (
     <main className="app">
       <section className="hero">
-        <p>{project.id} · 源提示词{project.sourceNo} · Port {project.port}</p>
-        <h1>{project.title}</h1>
-        <span>{project.prompt}</span>
+        <p>hxyfront-62011 · 蹄温预警与训练禁入闭环</p>
+        <h1>修蹄档案 · 蹄叶炎预警台</h1>
+        <span>
+          每匹马每个蹄位每天只保留一条有效蹄温；单蹄 &gt; 38.5℃ 或左右前蹄温差 &gt;
+          1.5℃ 即进入蹄叶炎观察、不得列入当日训练；观察须记录降温处置，连续两次复测正常才解除；
+          原蹄温更正后旧解除立即失效、历史留档；重复或并发提交沿用首次结果。
+        </span>
       </section>
 
       <section className="metrics">
-        {project.metrics.map((metric: string, index: number) => (
-          <article key={metric}>
-            <small>{metric}</small>
-            <strong>{[28, 6, 14, 91][index] ?? 10}</strong>
-          </article>
-        ))}
+        <article>
+          <small>当日准予训练</small>
+          <strong>{roster.cleared.length}</strong>
+        </article>
+        <article>
+          <small>观察中 · 禁入训练</small>
+          <strong className="metric-danger">{observingCount}</strong>
+        </article>
+        <article>
+          <small>待补测蹄温</small>
+          <strong className="metric-warn">{roster.pending.length}</strong>
+        </article>
+        <article>
+          <small>有效 / 归档蹄温</small>
+          <strong>
+            {activeTempCount}
+            <em> / {archivedCount}</em>
+          </strong>
+        </article>
       </section>
+
+      <div className="rule-strip">
+        <span>阈值：单蹄 &gt; 38.5℃</span>
+        <span>左右前蹄温差 &gt; 1.5℃</span>
+        <span>解除：降温处置 + 连续两次复测正常</span>
+        <span>更正原蹄温 ⇒ 旧解除立即失效（{revokedReleases} 条已失效留档）</span>
+        <span>蹄位：{HOOFS.length} 个</span>
+        <button
+          className="ghost"
+          onClick={() => {
+            repo.resetDemoData();
+            setDate(todayStr());
+            pushToast("已恢复演示数据", "ok");
+          }}
+        >
+          重置演示数据
+        </button>
+      </div>
+
+      <TrainingRoster date={date} />
 
       <section className="workspace">
-        <aside className="panel">
-          <h2>{project.domain}分类</h2>
-          <div className="chips">
-            {project.filters.map((item: string) => (
-              <button key={item}>{item}</button>
-            ))}
-          </div>
-        </aside>
-
-        <section className="panel form-panel">
-          <div className="heading">
-            <div>
-              <p>专业字段</p>
-              <h2>新增记录</h2>
-            </div>
-            <button className="primary">保存记录</button>
-          </div>
-          <div className="field-grid">
-            {project.fields.map((field: string) => (
-              <label key={field}>
-                <span>{field}</span>
-                <input placeholder={"填写" + field} />
-              </label>
-            ))}
-          </div>
-        </section>
+        <TemperatureEntry date={date} onDateChange={setDate} onResult={pushToast} />
       </section>
 
-      <section className="panel">
-        <div className="heading">
-          <div>
-            <p>近期记录</p>
-            <h2>工作台摘要</h2>
+      <HorseList date={date} />
+
+      <ObservationPanel date={date} onResult={pushToast} />
+
+      <HistoryArchive />
+
+      <footer className="footnote muted">
+        业务判断（domain/rules）、记录存储（storage）、页面展示（components）三层分离；
+        数据持久化于 localStorage，刷新页面后列表、训练名单与观察状态保持一致。
+      </footer>
+
+      <div className="toasts">
+        {toasts.map((t) => (
+          <div key={t.id} className={`toast toast-${t.kind}`}>
+            {t.msg}
           </div>
-          <button>导出CSV</button>
-        </div>
-        <div className="records">
-          {project.records.map((record: string[], index: number) => (
-            <article key={record.join("-")}>
-              <b>{String(index + 1).padStart(2, "0")}</b>
-              <div>
-                <h3>{record[0]}</h3>
-                <p>{record.slice(1).join(" · ")}</p>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
+        ))}
+      </div>
     </main>
   );
 }
